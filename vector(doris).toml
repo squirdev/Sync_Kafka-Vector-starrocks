@@ -1,0 +1,49 @@
+################################
+# 1️⃣ Kafka Source
+################################
+[sources.kafka_input]
+type = "kafka"
+bootstrap_servers = "kafka:9092"
+group_id = "vector-consumer"
+topics = ["article-topic"]
+auto_offset_reset = "earliest"
+
+decoding.codec = "json"
+decoding.lossy = false
+
+commit_interval_ms = 5000
+
+
+################################
+# 2️⃣ StarRocks Sink (Doris)
+################################
+[sinks.starrocks]
+type = "doris"
+inputs = ["kafka_input"]
+
+endpoints = ["http://starrocks:8080"]
+database = "demo"
+table = "articles"
+
+# Encode events as TSV that matches the table schema
+encoding.codec = "csv"
+encoding.csv.fields = ["id", "title", "author", "publish_time"]
+encoding.csv.delimiter = "\t"      # Doris default column_separator is tab
+
+auth.strategy = "basic"
+auth.user = "vector_user"
+auth.password = "4hZQucNi3b6sUu0t"
+
+batch.max_events = 500        # or 1_000 if traffic is high
+batch.timeout_secs = 5        # flush at most every 5s
+
+request.concurrency = 4   # or 2 on small boxes
+
+################################
+# Console Sink for Debugging
+################################
+[sinks.console_output]
+type = "console"
+inputs = ["kafka_input"]
+encoding.codec = "json"
+target = "stdout"
