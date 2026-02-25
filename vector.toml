@@ -1,0 +1,35 @@
+################################
+# 1️⃣ Kafka Source
+################################
+[sources.kafka_input]
+type = "kafka"
+bootstrap_servers = "kafka:9092"
+group_id = "vector-consumer"
+topics = ["article-topic"]
+decoding.codec = "json"
+decoding.lossy = false
+auto_offset_reset = "earliest"
+commit_interval_ms = 5000
+
+################################
+# 3️⃣ StarRocks Sink (Stream Load)
+################################
+[sinks.starrocks]
+type = "http"
+inputs = ["kafka_input"]
+uri = "http://starrocks:8040/api/demo/articles/_stream_load"
+method = "put"
+encoding.codec = "json"
+
+auth.strategy = "basic"
+auth.user = "vector_user"
+auth.password = "4hZQucNi3b6sUu0t"
+
+request.headers = { "Content-Type" = "application/json", "format" = "json", "strip_outer_array" = "true", "Expect" = "100-continue" }
+
+batch.max_events = 1000
+batch.timeout_secs = 5
+
+buffer.type = "disk"
+buffer.max_size = 1073741824   # 1GB buffer
+buffer.when_full = "block"
